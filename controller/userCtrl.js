@@ -108,13 +108,13 @@ const loginAdmin = asyncHandler(async (req, res) => {
 
 const handleRefreshToken = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
-  if (!cookie?.refreshToken) throw new Error("No Refresh Token in Cookies");
+  if (!cookie?.refreshToken) throw new Error("Nenhum token de atualização em cookies");
   const refreshToken = cookie.refreshToken;
   const user = await User.findOne({ refreshToken });
-  if (!user) throw new Error(" No Refresh token present in db or not matched");
+  if (!user) throw new Error(" Nenhum token de atualização presente no banco de dados ou não correspondido");
   jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
     if (err || user.id !== decoded.id) {
-      throw new Error("There is something wrong with refresh token");
+      throw new Error("Há algo errado com o token de atualização");
     }
     const accessToken = generateToken(user?._id);
     res.json({ accessToken });
@@ -125,11 +125,11 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
 
 const logout = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
-  if (!cookie?.refreshToken) throw new Error("No Refresh Token in Cookies");
+  if (!cookie?.refreshToken) throw new Error("Nenhum token de atualização em cookies");
   const refreshToken = cookie.refreshToken;
   const user = await User.findOne({ refreshToken });
   if (!user) {
-    res.clearCookie("refreshToken", {
+    res.clearCookie("atualizarToken", {
       httpOnly: true,
       secure: true,
     });
@@ -138,7 +138,7 @@ const logout = asyncHandler(async (req, res) => {
   await User.findOneAndUpdate(refreshToken, {
     refreshToken: "",
   });
-  res.clearCookie("refreshToken", {
+  res.clearCookie("atualizarToken", {
     httpOnly: true,
     secure: true,
   });
@@ -196,7 +196,7 @@ const saveAddress = asyncHandler(async (req, res, next) => {
 
 const getallUser = asyncHandler(async (req, res) => {
   try {
-    const getUsers = await User.find().populate("wishlist");
+    const getUsers = await User.find().populate("Lista de Desejos");
     res.json(getUsers);
   } catch (error) {
     throw new Error(error);
@@ -270,7 +270,7 @@ const unblockUser = asyncHandler(async (req, res) => {
       }
     );
     res.json({
-      message: "User UnBlocked",
+      message: "Usuário Desbloqueado",
     });
   } catch (error) {
     throw new Error(error);
@@ -294,15 +294,15 @@ const updatePassword = asyncHandler(async (req, res) => {
 const forgotPasswordToken = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
-  if (!user) throw new Error("User not found with this email");
+  if (!user) throw new Error("Usuário não encontrado com este e-mail");
   try {
     const token = await user.createPasswordResetToken();
     await user.save();
-    const resetURL = `Hi, Please follow this link to reset Your Password. This link is valid till 10 minutes from now. <a href='http://localhost:5000/api/user/reset-password/${token}'>Click Here</>`;
+    const resetURL = `Olá, siga este link para redefinir sua senha. Este link é válido até 10 minutos a partir de agora. <a href='http://localhost:3333/api/user/reset-password/${token}'>Click Aqui</>`;
     const data = {
       to: email,
-      text: "Hey User",
-      subject: "Forgot Password Link",
+      text: "Ei usuário",
+      subject: "Esqueceu o Link da Senha",
       htm: resetURL,
     };
     sendEmail(data);
@@ -320,7 +320,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
   });
-  if (!user) throw new Error(" Token Expired, Please try again later");
+  if (!user) throw new Error("Token expirado, tente novamente mais tarde");
   user.password = password;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
@@ -345,7 +345,7 @@ const userCart = asyncHandler(async (req, res) => {
   try {
     let products = [];
     const user = await User.findById(_id);
-    // check if user already have product in cart
+    // verifique se o usuário já tem produto no carrinho
     const alreadyExistCart = await Cart.findOne({ orderby: user._id });
     if (alreadyExistCart) {
       alreadyExistCart.remove();
@@ -405,7 +405,7 @@ const applyCoupon = asyncHandler(async (req, res) => {
   validateMongoDbId(_id);
   const validCoupon = await Coupon.findOne({ name: coupon });
   if (validCoupon === null) {
-    throw new Error("Invalid Coupon");
+    throw new Error("Coupon Inválido");
   }
   const user = await User.findOne({ _id });
   let { cartTotal } = await Cart.findOne({
@@ -428,7 +428,7 @@ const createOrder = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
   try {
-    if (!COD) throw new Error("Create cash order failed");
+    if (!COD) throw new Error("Falha ao criar ordem de pagamento");
     const user = await User.findById(_id);
     let userCart = await Cart.findOne({ orderby: user._id });
     let finalAmout = 0;
@@ -444,12 +444,12 @@ const createOrder = asyncHandler(async (req, res) => {
         id: uniqid(),
         method: "COD",
         amount: finalAmout,
-        status: "Cash on Delivery",
+        status: "Dinheiro na entrega",
         created: Date.now(),
-        currency: "usd",
+        currency: "brl",
       },
       orderby: user._id,
-      orderStatus: "Cash on Delivery",
+      orderStatus: "Dinheiro na entrega",
     }).save();
     let update = userCart.products.map((item) => {
       return {
@@ -460,7 +460,7 @@ const createOrder = asyncHandler(async (req, res) => {
       };
     });
     const updated = await Product.bulkWrite(update, {});
-    res.json({ message: "success" });
+    res.json({ message: "successo" });
   } catch (error) {
     throw new Error(error);
   }
