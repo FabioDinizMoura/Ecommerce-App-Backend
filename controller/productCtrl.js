@@ -154,7 +154,7 @@ const rating = asyncHandler(async (req, res) => {
         }
       );
     } else {
-      const rateProduct = await Product.findByIdAndUpdate(
+      const Product = await Product.findByIdAndUpdate(
         prodId,
         {
           $push: {

@@ -24,11 +24,11 @@ var productSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      required: true,
+      ref: "Category",
     },
     brand: {
       type: String,
-      required: true,
+      required: false,
     },
     quantity: {
       type: Number,
@@ -38,28 +38,22 @@ var productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    images: [
-      {
-        public_id: String,
-        url: String,
-      },
-    ],
-    color: [],
-    tags: String,
-    ratings: [
+    images: {
+      type: Array,
+    },
+    color: {
+      type: String,
+      required: true,
+    },
+    retings: [
       {
         star: Number,
-        comment: String,
-        postedby: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        postedby: { type: mongoose.Schema.Types.ObjectId, ref: "User"},
       },
     ],
-    totalrating: {
-      type: String,
-      default: 0,
-    },
-  },
-  { timestamps: true }
-);
+
+  },{timesstamps:true});
+  
 
 //Export the model
 module.exports = mongoose.model("Product", productSchema);
