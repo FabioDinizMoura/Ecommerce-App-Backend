@@ -1,9 +1,10 @@
+require('dotenv').config();
+
 const bodyParser = require("body-parser");
 const express = require("express");
 const dbConnect = require("./config/dbConnect");
 const { notFound, errorHandler } = require("./middlewares/errorHandler");
 const app = express();
-require('dotenv').config();
 const PORT = 3333;
 const authRouter = require("./routes/authRoute");
 const productRouter = require("./routes/productRoute");
@@ -23,14 +24,14 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use("/api/user", authRouter);
-app.use("/api/product", productRouter);
-app.use("/api/category", categoryRouter);
-app.use("/api/brand", brandRouter);
-app.use("/api/coupon", couponRouter);
-app.use("/api/color", colorRouter);
-app.use("/api/enquiry", enqRouter);
-app.use("/api/upload", uploadRouter);
+app.use("/user", authRouter);
+app.use("/product", productRouter);
+app.use("/category", categoryRouter);
+app.use("/brand", brandRouter);
+app.use("/coupon", couponRouter);
+app.use("/color", colorRouter);
+app.use("/enquiry", enqRouter);
+app.use("/upload", uploadRouter);
 
 app.use(notFound);
 app.use(errorHandler);

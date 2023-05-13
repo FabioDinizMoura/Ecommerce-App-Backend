@@ -8,7 +8,7 @@ const {
   addToWishlist,
   rating,
 } = require("../controller/productCtrl");
-const { isAdmin, authMiddleware } = require("../middlewares/authMiddleware");
+const { authMiddleware } = require("../middlewares/authMiddleware");
 const router = express.Router();
 
 router.post("/", authMiddleware, createProduct);

@@ -17,32 +17,33 @@ const jwt = require("jsonwebtoken");
 
 const createUser = asyncHandler(async (req, res) => {
   /**
-   * TODO:Get the email from req.body
+   * TODO:Obtenha o e-mail de req.body
    */
   const email = req.body.email;
   /**
-   * TODO:With the help of email find the user exists or not
+   * TODO:Com a ajuda do e-mail, descubra se o usuário existe ou não.
    */
   const findUser = await User.findOne({ email: email });
 
   if (!findUser) {
     /**
-     * TODO:se o usuário não for encontrado, crie um novo usuário
+     * TODO:Se o usuário não for encontrado, crie um novo usuário
      */
     const newUser = await User.create(req.body);
     res.json(newUser);
   } else {
     /**
-     * TODO:se o usuário for encontrado, emita um erro: O usuário já existe
+     * TODO:Se o usuário for encontrado, emita um erro: O usuário já existe
      */
-    throw new Error("User Already Exists");
+    throw new Error("Usúário já existe");
   }
 });
 
-// Login a user
+// Login Usuário
 const loginUserCtrl = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  // check if user exists or not
+
+  // Verifique se o usuário existe ou não
   const findUser = await User.findOne({ email });
   if (findUser && (await findUser.isPasswordMatched(password))) {
     const refreshToken = await generateRefreshToken(findUser?._id);
@@ -66,18 +67,17 @@ const loginUserCtrl = asyncHandler(async (req, res) => {
       token: generateToken(findUser?._id),
     });
   } else {
-    throw new Error("Invalid Credentials");
+    throw new Error("Credenciais inválidas");
   }
 });
 
 // admin login
-
 const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // verifique se o usuário existe ou não
+  //Verifique se o usuário existe ou não.
   const findAdmin = await User.findOne({ email });
-  if (findAdmin.role !== "admin") throw new Error("Not Authorised");
+  if (findAdmin.role !== "admin") throw new Error("Não autorizado");
   if (findAdmin && (await findAdmin.isPasswordMatched(password))) {
     const refreshToken = await generateRefreshToken(findAdmin?._id);
     const updateuser = await User.findByIdAndUpdate(
@@ -104,32 +104,32 @@ const loginAdmin = asyncHandler(async (req, res) => {
   }
 });
 
-// lidar com token de atualização
+// handle refresh token
 
 const handleRefreshToken = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
-  if (!cookie?.refreshToken) throw new Error("Nenhum token de atualização em cookies");
+  if (!cookie?.refreshToken) throw new Error("No Refresh Token in Cookies");
   const refreshToken = cookie.refreshToken;
   const user = await User.findOne({ refreshToken });
-  if (!user) throw new Error(" Nenhum token de atualização presente no banco de dados ou não correspondido");
+  if (!user) throw new Error(" No Refresh token present in db or not matched");
   jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
     if (err || user.id !== decoded.id) {
-      throw new Error("Há algo errado com o token de atualização");
+      throw new Error("There is something wrong with refresh token");
     }
     const accessToken = generateToken(user?._id);
     res.json({ accessToken });
   });
 });
 
-// logout funcionalidade
+// logout
 
 const logout = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
-  if (!cookie?.refreshToken) throw new Error("Nenhum token de atualização em cookies");
+  if (!cookie?.refreshToken) throw new Error("No Refresh Token in Cookies");
   const refreshToken = cookie.refreshToken;
   const user = await User.findOne({ refreshToken });
   if (!user) {
-    res.clearCookie("atualizarToken", {
+    res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: true,
     });
@@ -138,14 +138,14 @@ const logout = asyncHandler(async (req, res) => {
   await User.findOneAndUpdate(refreshToken, {
     refreshToken: "",
   });
-  res.clearCookie("atualizarToken", {
+  res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: true,
   });
   res.sendStatus(204); // forbidden
 });
 
-// Update  user
+// Atualizar Usuário
 
 const updatedUser = asyncHandler(async (req, res) => {
   const { _id } = req.user;
@@ -170,7 +170,7 @@ const updatedUser = asyncHandler(async (req, res) => {
   }
 });
 
-// salvar endereço do usuário
+// Salvar endereço do usuário
 
 const saveAddress = asyncHandler(async (req, res, next) => {
   const { _id } = req.user;
@@ -192,18 +192,18 @@ const saveAddress = asyncHandler(async (req, res, next) => {
   }
 });
 
-// Obter todos os usuários
+// Listar Todos usuários
 
 const getallUser = asyncHandler(async (req, res) => {
   try {
-    const getUsers = await User.find().populate("Lista de Desejos");
+    const getUsers = await User.find().populate("wishlist");
     res.json(getUsers);
   } catch (error) {
     throw new Error(error);
   }
 });
 
-// Obter um único usuário
+// Listar Usuário pelo id
 
 const getaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -219,7 +219,7 @@ const getaUser = asyncHandler(async (req, res) => {
   }
 });
 
-// Obter um único usuário
+// Listar Usuário para deletar
 
 const deleteaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -270,7 +270,7 @@ const unblockUser = asyncHandler(async (req, res) => {
       }
     );
     res.json({
-      message: "Usuário Desbloqueado",
+      message: "User UnBlocked",
     });
   } catch (error) {
     throw new Error(error);
@@ -294,15 +294,15 @@ const updatePassword = asyncHandler(async (req, res) => {
 const forgotPasswordToken = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
-  if (!user) throw new Error("Usuário não encontrado com este e-mail");
+  if (!user) throw new Error("User not found with this email");
   try {
     const token = await user.createPasswordResetToken();
     await user.save();
     const resetURL = `Olá, siga este link para redefinir sua senha. Este link é válido até 10 minutos a partir de agora. <a href='http://localhost:3333/api/user/reset-password/${token}'>Click Aqui</>`;
     const data = {
       to: email,
-      text: "Ei usuário",
-      subject: "Esqueceu o Link da Senha",
+      text: "Olá Usuário",
+      subject: "Forgot Password Link",
       htm: resetURL,
     };
     sendEmail(data);
@@ -345,6 +345,7 @@ const userCart = asyncHandler(async (req, res) => {
   try {
     let products = [];
     const user = await User.findById(_id);
+
     // verifique se o usuário já tem produto no carrinho
     const alreadyExistCart = await Cart.findOne({ orderby: user._id });
     if (alreadyExistCart) {
@@ -405,7 +406,7 @@ const applyCoupon = asyncHandler(async (req, res) => {
   validateMongoDbId(_id);
   const validCoupon = await Coupon.findOne({ name: coupon });
   if (validCoupon === null) {
-    throw new Error("Coupon Inválido");
+    throw new Error("Invalid Coupon");
   }
   const user = await User.findOne({ _id });
   let { cartTotal } = await Cart.findOne({
@@ -428,7 +429,7 @@ const createOrder = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
   try {
-    if (!COD) throw new Error("Falha ao criar ordem de pagamento");
+    if (!COD) throw new Error("Create cash order failed");
     const user = await User.findById(_id);
     let userCart = await Cart.findOne({ orderby: user._id });
     let finalAmout = 0;
@@ -444,12 +445,12 @@ const createOrder = asyncHandler(async (req, res) => {
         id: uniqid(),
         method: "COD",
         amount: finalAmout,
-        status: "Dinheiro na entrega",
+        status: "Cash on Delivery",
         created: Date.now(),
-        currency: "brl",
+        currency: "usd",
       },
       orderby: user._id,
-      orderStatus: "Dinheiro na entrega",
+      orderStatus: "Cash on Delivery",
     }).save();
     let update = userCart.products.map((item) => {
       return {
@@ -460,7 +461,7 @@ const createOrder = asyncHandler(async (req, res) => {
       };
     });
     const updated = await Product.bulkWrite(update, {});
-    res.json({ message: "successo" });
+    res.json({ message: "success" });
   } catch (error) {
     throw new Error(error);
   }
